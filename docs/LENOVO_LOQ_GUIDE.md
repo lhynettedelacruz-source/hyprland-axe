@@ -45,13 +45,13 @@ prime-run ./your-application
 
 ### CPU Governor Recommendations
 
-For Alder Lake (12th Gen Intel) CPUs with P-cores and E-cores:
+For modern Intel CPUs (12th Gen Alder Lake, 13th Gen Raptor Lake) with hybrid architecture (P-cores and E-cores), or AMD Ryzen processors:
 
 - **Performance Mode**: The system will use `performance` governor, maximizing clock speeds
 - **Balanced Mode**: Uses `schedutil` or similar, balancing power and performance
 - **Power Saver**: Reduces frequencies to save power
 
-The kernel's scheduler handles P-core/E-core workload distribution automatically.
+The Linux kernel's scheduler automatically handles workload distribution across CPU cores (including P-core/E-core scheduling on Intel hybrid CPUs).
 
 ### Avoiding Conflicts
 

@@ -20,6 +20,12 @@ PROFILE_GENERIC = "generic"
 PROFILE_LENOVO_LOQ = "lenovo_loq"
 PROFILE_GAMING_LAPTOP = "gaming_laptop"
 
+# Timeout constants (in seconds)
+GAMING_SUSPEND_TIMEOUT = 3600   # 60 minutes for gaming laptops
+GENERIC_SUSPEND_TIMEOUT = 1800  # 30 minutes for generic laptops
+GAMING_SCREEN_OFF_TIMEOUT = 600  # 10 minutes for gaming laptops
+GENERIC_SCREEN_OFF_TIMEOUT = 330  # 5.5 minutes for generic laptops
+
 
 class HardwareProfile:
     """Represents detected hardware profile with optimized settings."""
@@ -74,7 +80,11 @@ class HardwareProfile:
         return False
 
     def _detect_dgpu(self) -> bool:
-        """Check if a discrete GPU is present (NVIDIA or AMD)."""
+        """Check if a discrete GPU is present (NVIDIA or AMD).
+        
+        Detects discrete GPUs by looking for NVIDIA or AMD Radeon/ATI cards
+        in lspci output. Excludes integrated AMD APUs.
+        """
         try:
             result = subprocess.run(
                 ["lspci"],
@@ -83,14 +93,25 @@ class HardwareProfile:
                 timeout=5
             )
             output = result.stdout.upper()
-            # Check for discrete GPU indicators
-            if "NVIDIA" in output or "AMD/ATI" in output or "RADEON" in output:
-                # Exclude integrated graphics only systems
-                lines = output.split('\n')
-                for line in lines:
-                    if "VGA" in line or "3D" in line or "DISPLAY" in line:
-                        if "NVIDIA" in line or ("AMD" in line and "RADEON" in line):
-                            return True
+            lines = output.split('\n')
+            
+            for line in lines:
+                # Only check VGA, 3D controller, or Display controller lines
+                if not any(ctrl in line for ctrl in ["VGA", "3D", "DISPLAY"]):
+                    continue
+                    
+                # NVIDIA discrete GPU detection
+                if "NVIDIA" in line:
+                    return True
+                    
+                # AMD discrete GPU detection (Radeon cards)
+                # Check for Radeon branding which indicates discrete GPU
+                # ATI was acquired by AMD, so check for both
+                if "RADEON" in line:
+                    return True
+                if "ATI" in line and "RADEON" in line:
+                    return True
+                    
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
         return False
@@ -199,8 +220,8 @@ class HardwareProfile:
         updates, or background tasks.
         """
         if self.is_gaming_laptop:
-            return 3600  # 60 minutes for gaming laptops
-        return 1800  # 30 minutes for generic
+            return GAMING_SUSPEND_TIMEOUT
+        return GENERIC_SUSPEND_TIMEOUT
 
     def get_screen_off_timeout(self) -> int:
         """Get recommended screen off timeout (in seconds).
@@ -208,8 +229,8 @@ class HardwareProfile:
         Gaming laptops get longer timeouts.
         """
         if self.is_gaming_laptop:
-            return 600  # 10 minutes for gaming laptops
-        return 330  # 5.5 minutes for generic
+            return GAMING_SCREEN_OFF_TIMEOUT
+        return GENERIC_SCREEN_OFF_TIMEOUT
 
     def should_use_prime_run(self) -> bool:
         """Return True if prime-run should be used for GPU workloads.
