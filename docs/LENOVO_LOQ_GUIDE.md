@@ -18,16 +18,50 @@ Lenovo LOQ laptops are gaming machines designed for high-performance workloads. 
 - **Hardware-Aware Tooltips**: The power profile buttons show recommendations specific to your hardware.
 - **Brightness Control**: Screen brightness adjustment via `brightnessctl` or `ddcutil`.
 
+## Understanding Lenovo LOQ Power Management
+
+### Fn+Q and Platform Profiles (CRITICAL)
+
+Lenovo LOQ laptops use **extended platform profiles** controlled by the **Fn+Q** key, not just standard ACPI profiles. This is firmware-level control that **overrides AC power state**.
+
+**Important**: Being plugged in (AC) does NOT guarantee full power. You must use **Fn+Q to select Performance mode**.
+
+| Fn+Q Mode | `platform_profile` Value | GPU Power | Description |
+|-----------|-------------------------|-----------|-------------|
+| **Quiet** | `low-power` | Limited | Max efficiency, strict power limits |
+| **Auto/Balanced** | `balanced` | Moderate | Firmware-managed balance |
+| **Performance** | `balanced-performance` | **Full** | High performance, GPU unlocked |
+| **Custom** | `custom` | Varies | OEM-controlled / vendor logic |
+
+To check your current platform profile:
+```bash
+cat /sys/firmware/acpi/platform_profile
+```
+
+To see available profiles:
+```bash
+cat /sys/firmware/acpi/platform_profile_choices
+```
+
+### Why 30W GPU Power Happens
+
+If your GPU is limited to ~30W even on AC power, it's because:
+- `platform_profile` is NOT set to `balanced-performance`
+- Lenovo firmware caps GPU power in other modes
+- **Solution**: Press **Fn+Q** until you reach Performance mode
+
+**AC power ≠ Full Power on LOQ. Fn+Q Performance mode = Full Power.**
+
 ## Recommended Configuration for Lenovo LOQ
 
 ### Power Profiles
 
-| Scenario | Recommended Profile | Why |
-|----------|-------------------|-----|
-| **Gaming / Heavy Workloads** | Performance | Full CPU turbo + GPU boost |
-| **Plugged In (General Use)** | Performance or Balanced | Avoid unnecessary throttling |
-| **On Battery** | Balanced | Good compromise between battery life and usability |
-| **Maximum Battery Life** | Power Saver | Only when needed; may limit performance significantly |
+| Scenario | Recommended Profile | Fn+Q Mode | Why |
+|----------|-------------------|-----------|-----|
+| **Gaming / Heavy Workloads** | Performance | **Performance** | Full CPU turbo + GPU boost (135W) |
+| **Plugged In (General Use)** | Performance or Balanced | Performance | Avoid unnecessary throttling |
+| **On Battery** | Balanced | Balanced | Good compromise between battery life and usability |
+| **Maximum Battery Life** | Power Saver | Quiet | Only when needed; may limit performance significantly |
 
 ### NVIDIA Optimus / Hybrid Graphics
 
@@ -128,6 +162,16 @@ Or use the gamemode integration if you have `gamemode` installed.
 
 ### Performance Issues on AC Power
 
+**First, check Fn+Q platform profile** (most common cause on LOQ):
+```bash
+cat /sys/firmware/acpi/platform_profile
+# Should show "balanced-performance" for full power
+```
+
+If not `balanced-performance`, press **Fn+Q** until you reach Performance mode.
+
+Then check power-profiles-daemon:
+
 1. Check your current power profile:
    ```bash
    powerprofilesctl get
@@ -143,6 +187,20 @@ Or use the gamemode integration if you have `gamemode` installed.
    systemctl status tlp.service  # Should be inactive/disabled
    systemctl status power-profiles-daemon.service  # Should be active
    ```
+
+### GPU Limited to 30W (LOQ-Specific)
+
+This is the most common performance issue on Lenovo LOQ:
+
+1. **Root cause**: Fn+Q is not set to Performance mode
+2. **Solution**: Press Fn+Q until `platform_profile` shows `balanced-performance`
+3. **Verify**:
+   ```bash
+   cat /sys/firmware/acpi/platform_profile
+   # Must be "balanced-performance" for full 135W GPU power
+   ```
+
+**Remember**: AC power alone does NOT unlock full GPU power on LOQ. The firmware requires Performance mode via Fn+Q.
 
 ### GPU Not Being Used
 
