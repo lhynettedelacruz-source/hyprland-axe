@@ -157,9 +157,25 @@ curl -fsSL https://raw.githubusercontent.com/Axenide/Ax-Shell/main/install.sh | 
 - [x] Wallpaper Selector
 - [x] Workspaces Overview
 - [x] Multi-monitor support
+- [x] Gaming laptop detection (Lenovo LOQ, etc.)
 - [ ] Multimodal AI Assistant
 - [ ] OSD
 - [ ] OTP Manager
+
+---
+
+<h2><sub><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Video%20Game.png" alt="Gaming" width="25" height="25" /></sub> Gaming Laptop Support</h2>
+
+Ax-Shell includes automatic hardware detection for gaming laptops like **Lenovo LOQ**, **Legion**, and others with NVIDIA Optimus.
+
+**Features:**
+- Hardware-aware power profile tooltips
+- Optimized hypridle configuration for gaming (`config/hypr/hypridle-gaming.conf`)
+- No conflicts with NVIDIA drivers or hybrid graphics
+
+**Note:** Ax-Shell uses `power-profiles-daemon` (not TLP) which integrates well with gaming hardware.
+
+📖 See [docs/LENOVO_LOQ_GUIDE.md](docs/LENOVO_LOQ_GUIDE.md) for detailed configuration tips.
 
 ---
 

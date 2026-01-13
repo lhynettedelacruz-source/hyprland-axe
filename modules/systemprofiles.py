@@ -7,6 +7,7 @@ from fabric.widgets.label import Label
 
 import config.data as data
 import modules.icons as icons
+from utils.hardware_profile import get_hardware_profile
 
 
 class Systemprofiles(Box):
@@ -24,6 +25,9 @@ class Systemprofiles(Box):
         self.bat_balanced = None
         self.bat_perf = None
 
+        # Get hardware profile for optimized tooltips
+        self.hw_profile = get_hardware_profile()
+
         children = []
 
         try:
@@ -38,12 +42,17 @@ class Systemprofiles(Box):
         except (subprocess.CalledProcessError, FileNotFoundError):
             available_profiles = ""
 
+        # Generate tooltips based on hardware profile
+        save_tooltip = self._get_power_saver_tooltip()
+        balanced_tooltip = self._get_balanced_tooltip()
+        perf_tooltip = self._get_performance_tooltip()
+
         if "power-saver" in available_profiles:
             self.bat_save = Button(
                 name="battery-save",
                 child=Label(name="battery-save-label", markup=icons.power_saving),
                 on_clicked=lambda *_: self.set_power_mode("power-saver"),
-                tooltip_text="Power saving mode",
+                tooltip_text=save_tooltip,
             )
             children.append(self.bat_save)
 
@@ -52,7 +61,7 @@ class Systemprofiles(Box):
                 name="battery-balanced",
                 child=Label(name="battery-balanced-label", markup=icons.power_balanced),
                 on_clicked=lambda *_: self.set_power_mode("balanced"),
-                tooltip_text="Balanced mode",
+                tooltip_text=balanced_tooltip,
             )
             children.append(self.bat_balanced)
 
@@ -63,7 +72,7 @@ class Systemprofiles(Box):
                     name="battery-performance-label", markup=icons.power_performance
                 ),
                 on_clicked=lambda *_: self.set_power_mode("performance"),
-                tooltip_text="Performance mode",
+                tooltip_text=perf_tooltip,
             )
             children.append(self.bat_perf)
 
@@ -152,3 +161,25 @@ class Systemprofiles(Box):
             self.bat_balanced.add_style_class("active")
         elif self.current_mode == "performance" and self.bat_perf:
             self.bat_perf.add_style_class("active")
+
+    def _get_power_saver_tooltip(self) -> str:
+        """Generate tooltip for power saver mode based on hardware profile."""
+        if self.hw_profile.is_gaming_laptop:
+            return "Power saver - May limit GPU/CPU performance"
+        return "Power saving mode"
+
+    def _get_balanced_tooltip(self) -> str:
+        """Generate tooltip for balanced mode based on hardware profile."""
+        if self.hw_profile.is_lenovo_loq:
+            return "Balanced - Recommended for battery (LOQ)"
+        if self.hw_profile.is_gaming_laptop:
+            return "Balanced - Good for battery use"
+        return "Balanced mode"
+
+    def _get_performance_tooltip(self) -> str:
+        """Generate tooltip for performance mode based on hardware profile."""
+        if self.hw_profile.is_lenovo_loq:
+            return "Performance - Recommended when plugged in (LOQ)"
+        if self.hw_profile.is_gaming_laptop:
+            return "Performance - Full GPU/CPU power (use when plugged in)"
+        return "Performance mode"
